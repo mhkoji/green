@@ -101,41 +101,43 @@
 (defvar +h+ :h)
 (defvar +l+ :l)
 
+(let ((accessors
+        `((,+bc+ ,#'bc-get ,#'bc-set)
+          (,+de+ ,#'de-get ,#'de-set)
+          (,+hl+ ,#'hl-get ,#'hl-set))))
+  (defun reg16-getter (reg16)
+    (or (second (assoc reg16 accessors))
+        (error "No such register: ~A" reg16)))
+  (defun reg16-setter (reg16)
+    (or (third (assoc reg16 accessors))
+        (error "No such register: ~A" reg16))))
+
+(let ((accessors
+        `((,+a+ ,#'a-get ,#'a-set)
+          (,+b+ ,#'b-get ,#'b-set)
+          (,+c+ ,#'c-get ,#'c-set)
+          (,+d+ ,#'d-get ,#'d-set)
+          (,+e+ ,#'e-get ,#'e-set)
+          (,+h+ ,#'h-get ,#'h-set)
+          (,+l+ ,#'l-get ,#'l-set))))
+  (defun reg8-getter (reg8)
+    (or (second (assoc reg8 accessors))
+        (error "No such register: ~A" reg8)))
+  (defun reg8-setter (reg8)
+    (or (third (assoc reg8 accessors))
+        (error "No such register: ~A" reg8))))
+
 (defun reg16-get (register-set reg16)
-  (let ((getter (ecase reg16
-                  (:bc #'bc-get)
-                  (:de #'de-get)
-                  (:hl #'hl-get))))
-    (funcall getter register-set)))
+  (funcall (reg16-getter reg16) register-set))
 
 (defun reg16-set (register-set reg16 int16)
-  (let ((setter (ecase reg16
-                  (:bc #'bc-set)
-                  (:de #'de-set)
-                  (:hl #'hl-set))))
-    (funcall setter register-set int16)))
+  (funcall (reg16-setter reg16) register-set int16))
 
 (defun reg8-get (register-set reg8)
-  (let ((getter (ecase reg8
-                  (:a #'a-get)
-                  (:b #'b-get)
-                  (:c #'c-get)
-                  (:d #'d-get)
-                  (:e #'e-get)
-                  (:h #'h-get)
-                  (:l #'l-get))))
-    (funcall getter register-set)))
+  (funcall (reg8-getter reg8) register-set))
 
 (defun reg8-set (register-set reg8 int8)
-  (let ((setter (ecase reg8
-                  (:a #'a-set)
-                  (:b #'b-set)
-                  (:c #'c-set)
-                  (:d #'d-set)
-                  (:e #'e-set)
-                  (:h #'h-set)
-                  (:l #'l-set))))
-    (funcall setter register-set int8)))
+  (funcall (reg8-setter reg8) register-set int8))
 
 (defstruct ldr8r8 x y)
 (defstruct ldr8d8 r d)
