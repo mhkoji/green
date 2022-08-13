@@ -2,14 +2,76 @@
   (:use :cl))
 (in-package :green.t)
 
+(defmethod green.cpu::mem8-get ((mem list) (addr integer))
+  (nth addr mem))
+
+(defmethod green.cpu::mem8-set ((mem list) (addr integer) (int8 integer))
+  (setf (nth addr mem) int8))
+
 (defmacro ldr8r8 (&key test)
   `(let ((set (green.cpu::make-register-set
                :pc 0
                :bc #x0000
                :de #x0012)))
      (green.cpu::run (green.cpu::make-ldr8r8 :x :b :y :e) nil set)
-     (,test (= (green.cpu::register-set-bc set) #x1200))
-     (,test (= (green.cpu::register-set-pc set) 1))))
+     (,test (= (green.cpu::b-get set) #x12))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro ldr8d8 (&key test)
+  `(let ((set (green.cpu::make-register-set
+               :pc 0
+               :bc #x0000)))
+     (green.cpu::run (green.cpu::make-ldr8d8 :r :b :d #x12) nil set)
+     (,test (= (green.cpu::b-get set) #x12))
+     (,test (= (green.cpu::pc-get set) 2))))
+
+(defmacro ldr8hl (&key test)
+  `(let ((set (green.cpu::make-register-set
+               :pc 0
+               :bc #x0000
+               :hl #x0000)))
+     (green.cpu::run (green.cpu::make-ldr8hl :r :b) (list #x12) set)
+     (,test (= (green.cpu::b-get set) #x12))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro ldhlr8 (&key test)
+  `(let ((mem (list #x00))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :bc #x1200
+               :hl #x0000)))
+     (green.cpu::run (green.cpu::make-ldhlr8 :r :b) mem set)
+     (,test (= (nth 0 mem) #x12))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro ldabc (&key test)
+  `(let ((mem (list #x12))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :af #x0000
+               :bc #x0000)))
+     (green.cpu::run (green.cpu::make-ldabc) mem set)
+     (,test (= (green.cpu::a-get set) #x12))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro ldade (&key test)
+  `(let ((mem (list #x12))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :af #x0000
+               :de #x0000)))
+     (green.cpu::run (green.cpu::make-ldade) mem set)
+     (,test (= (green.cpu::a-get set) #x12))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro ldad16 (&key test)
+  `(let ((mem (list #x12))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :af #x0000)))
+     (green.cpu::run (green.cpu::make-ldad16 :d #x0000) mem set)
+     (,test (= (green.cpu::a-get set) #x12))
+     (,test (= (green.cpu::pc-get set) 3))))
 
 ;;;
 
@@ -26,5 +88,12 @@
                       (,sym :test fiveam:is)))
                  syms))))
 
-(add-tests :command
- ldr8r8)
+(add-tests
+ :command
+ ldr8r8
+ ldr8d8
+ ldr8hl
+ ldhlr8
+ ldabc
+ ldade
+ ldad16)

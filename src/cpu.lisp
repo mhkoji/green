@@ -153,8 +153,8 @@
   (pc-inc register-set))
 
 (defmethod run ((cmd ldr8d8) memory register-set)
-  (with-slots (x d) cmd
-    (reg8-set register-set x d))
+  (with-slots (r d) cmd
+    (reg8-set register-set r d))
   (pc-inc register-set 2))
 
 (defmethod run ((cmd ldr8hl) memory register-set)
@@ -178,9 +178,9 @@
   (pc-inc register-set))
 
 (defmethod run ((cmd ldade) memory register-set)
-  (let ((addr (de-get register-set))
-        (int8 (a-get register-set)))
-    (mem8-set memory addr int8))
+  (let ((addr (de-get register-set)))
+    (let ((int8 (mem8-get memory addr)))
+      (a-set register-set int8)))
   (pc-inc register-set))
 
 (defmethod run ((cmd ldad16) memory register-set)
