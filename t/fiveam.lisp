@@ -158,6 +158,50 @@
      (,test (= (green.cpu::mem8-get mem #xFF01) #x12))
      (,test (= (green.cpu::pc-get set) 1))))
 
+(defmacro ldihla (&key test)
+  `(let ((mem (list #x00))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :hl #x0000
+               :af #x1200)))
+     (green.cpu::run (green.cpu::make-ldihla) mem set)
+     (,test (= (nth 0 mem) #x12))
+     (,test (= (green.cpu::hl-get set) #x0001))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro ldiahl (&key test)
+  `(let ((mem (list #x12))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :hl #x0000
+               :af #x0000)))
+     (green.cpu::run (green.cpu::make-ldiahl) mem set)
+     (,test (= (green.cpu::a-get set) #x12))
+     (,test (= (green.cpu::hl-get set) #x0001))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro lddhla (&key test)
+  `(let ((mem (list nil #x00))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :hl #x0001
+               :af #x1200)))
+     (green.cpu::run (green.cpu::make-lddhla) mem set)
+     (,test (= (nth 1 mem) #x12))
+     (,test (= (green.cpu::hl-get set) #x0000))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro lddahl (&key test)
+  `(let ((mem (list nil #x12))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :hl #x0001
+               :af #x0000)))
+     (green.cpu::run (green.cpu::make-lddahl) mem set)
+     (,test (= (green.cpu::a-get set) #x12))
+     (,test (= (green.cpu::hl-get set) #x0000))
+     (,test (= (green.cpu::pc-get set) 1))))
+
 ;;;
 
 (fiveam:def-suite* :green.t)
@@ -189,4 +233,8 @@
  ldaff00+d8
  ldff00+d8a
  ldaff00+c
- ldff00+ca)
+ ldff00+ca
+ ldihla
+ ldiahl
+ lddhla
+ lddahl)

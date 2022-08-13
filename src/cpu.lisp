@@ -78,6 +78,32 @@
   (let ((h (h-get register-set)))
     (hl-set register-set (make-int16 h l))))
 
+
+(defun f-get (register-set)
+  (int16-lo (af-get register-set)))
+
+(defun carry-get (register-set)
+  (let ((f (f-get register-set)))
+    (= (logand f #b00010000) #b00010000)))
+
+(defun carry-set (register-set carry-p)
+  (let ((new-f (if carry-p
+                   (logior (f-get register-set) #b00010000)
+                   (logand (f-get register-set) #b11101111)))
+        (a (a-get register-set)))
+    (af-set register-set (make-int16 a new-f))))
+
+(defun zero-get (register-set)
+  (let ((f (f-get register-set)))
+    (= (logand f #b10000000) #b10000000)))
+
+(defun zero-set (register-set zero-p)
+  (let ((new-f (if zero-p
+                   (logior (f-get register-set) #b10000000)
+                   (logand (f-get register-set) #b01111111)))
+        (a (a-get register-set)))
+    (af-set register-set (make-int16 a new-f))))
+
 ;;;
 
 (defgeneric mem8-get (memory addr))
@@ -154,7 +180,10 @@
 (defstruct ldff00+d8a d)
 (defstruct ldaff00+c)
 (defstruct ldff00+ca)
-
+(defstruct ldihla)
+(defstruct ldiahl)
+(defstruct lddhla)
+(defstruct lddahl)
 
 (defmethod run ((cmd ldr8r8) memory register-set)
   (with-slots (x y) cmd
@@ -245,6 +274,41 @@
         (int8 (a-get register-set)))
     (mem8-set memory addr int8))
   (pc-inc register-set))
+
+(labels ((inc (int16)
+           (if (= int16 #xFFFF) #x0000 (1+ int16)))
+         (dec (int16)
+           (if (= int16 #x0000) #xFFFF (1- int16)))
+         (hl-update (register-set fn)
+           (let ((int16 (funcall fn (hl-get register-set))))
+             (hl-set register-set int16))))
+  (defmethod run ((cmd ldihla) memory register-set)
+    (let ((addr (hl-get register-set))
+          (int8 (a-get register-set)))
+      (mem8-set memory addr int8))
+    (hl-update register-set #'inc)
+    (pc-inc register-set))
+
+  (defmethod run ((cmd ldiahl) memory register-set)
+    (let ((addr (hl-get register-set)))
+      (let ((int8 (mem8-get memory addr)))
+        (a-set register-set int8)))
+    (hl-update register-set #'inc)
+    (pc-inc register-set))
+
+  (defmethod run ((cmd lddhla) memory register-set)
+    (let ((addr (hl-get register-set))
+          (int8 (a-get register-set)))
+      (mem8-set memory addr int8))
+    (hl-update register-set #'dec)
+    (pc-inc register-set))
+
+  (defmethod run ((cmd lddahl) memory register-set)
+    (let ((addr (hl-get register-set)))
+      (let ((int8 (mem8-get memory addr)))
+        (a-set register-set int8)))
+    (hl-update register-set #'dec)
+    (pc-inc register-set)))
 
 ;;;
 
