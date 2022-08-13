@@ -8,6 +8,13 @@
 (defmethod green.cpu::mem8-set ((mem list) (addr integer) (int8 integer))
   (setf (nth addr mem) int8))
 
+(defmethod green.cpu::mem8-get ((mem hash-table) (addr integer))
+  (gethash addr mem))
+
+(defmethod green.cpu::mem8-set ((mem hash-table)
+                                (addr integer) (int8 integer))
+  (setf (gethash addr mem) int8))
+
 (defmacro ldr8r8 (&key test)
   `(let ((set (green.cpu::make-register-set
                :pc 0
@@ -111,6 +118,46 @@
      (,test (= (nth 0 mem) #x12))
      (,test (= (green.cpu::pc-get set) 3))))
 
+(defmacro ldaff00+d8 (&key test)
+  `(let ((mem (make-hash-table :test #'equal))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :af #x0000)))
+     (green.cpu::mem8-set mem #xFF01 #x12)
+     (green.cpu::run (green.cpu::make-ldaff00+d8 :d #x01) mem set)
+     (,test (= (green.cpu::a-get set) #x12))
+     (,test (= (green.cpu::pc-get set) 2))))
+
+(defmacro ldff00+d8a (&key test)
+  `(let ((mem (make-hash-table :test #'equal))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :af #x1200)))
+     (green.cpu::run (green.cpu::make-ldff00+d8a :d #x01) mem set)
+     (,test (= (green.cpu::mem8-get mem #xFF01) #x12))
+     (,test (= (green.cpu::pc-get set) 2))))
+
+(defmacro ldaff00+c (&key test)
+  `(let ((mem (make-hash-table :test #'equal))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :bc #x0001
+               :af #x0000)))
+     (green.cpu::mem8-set mem #xFF01 #x12)
+     (green.cpu::run (green.cpu::make-ldaff00+c) mem set)
+     (,test (= (green.cpu::a-get set) #x12))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro ldff00+ca (&key test)
+  `(let ((mem (make-hash-table :test #'equal))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :bc #x0001
+               :af #x1200)))
+     (green.cpu::run (green.cpu::make-ldff00+ca) mem set)
+     (,test (= (green.cpu::mem8-get mem #xFF01) #x12))
+     (,test (= (green.cpu::pc-get set) 1))))
+
 ;;;
 
 (fiveam:def-suite* :green.t)
@@ -138,4 +185,8 @@
  ldad16
  ldbca
  lddea
- ldd16a)
+ ldd16a
+ ldaff00+d8
+ ldff00+d8a
+ ldaff00+c
+ ldff00+ca)

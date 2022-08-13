@@ -150,6 +150,10 @@
 (defstruct ldbca)
 (defstruct lddea)
 (defstruct ldd16a d)
+(defstruct ldaff00+d8 d)
+(defstruct ldff00+d8a d)
+(defstruct ldaff00+c)
+(defstruct ldff00+ca)
 
 
 (defmethod run ((cmd ldr8r8) memory register-set)
@@ -215,6 +219,32 @@
   (with-slots (d) cmd
     (mem8-set memory d (a-get register-set)))
   (pc-inc register-set 3))
+
+(defmethod run ((cmd ldaff00+d8) memory register-set)
+  (with-slots (d) cmd
+    (let ((addr (make-int16 #xFF d)))
+      (let ((int8 (mem8-get memory addr)))
+        (a-set register-set int8))))
+  (pc-inc register-set 2))
+
+(defmethod run ((cmd ldff00+d8a) memory register-set)
+  (with-slots (d) cmd
+    (let ((addr (make-int16 #xFF d))
+          (int8 (a-get register-set)))
+      (mem8-set memory addr int8)))
+  (pc-inc register-set 2))
+
+(defmethod run ((cmd ldaff00+c) memory register-set)
+  (let ((addr (make-int16 #xFF (c-get register-set))))
+    (let ((int8 (mem8-get memory addr)))
+      (a-set register-set int8)))
+  (pc-inc register-set))
+
+(defmethod run ((cmd ldff00+ca) memory register-set)
+  (let ((addr (make-int16 #xFF (c-get register-set)))
+        (int8 (a-get register-set)))
+    (mem8-set memory addr int8))
+  (pc-inc register-set))
 
 ;;;
 
