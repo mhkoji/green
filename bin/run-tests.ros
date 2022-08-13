@@ -1,0 +1,20 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  #+quicklisp(ql:quickload '() :silent t)
+  )
+
+(defpackage :ros.script.run-tests.3869377692
+  (:use :cl))
+(in-package :ros.script.run-tests.3869377692)
+(ql:quickload :fiveam)
+
+(defun main (&rest argv)
+  (declare (ignorable argv))
+  (asdf:oos 'asdf:load-op :green-test :force t)
+  (fiveam:run! :green.t))
+;;; vim: set ft=lisp lisp:
