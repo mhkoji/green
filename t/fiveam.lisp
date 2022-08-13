@@ -44,6 +44,15 @@
      (,test (= (nth 0 mem) #x12))
      (,test (= (green.cpu::pc-get set) 1))))
 
+(defmacro ldhld8 (&key test)
+  `(let ((mem (list #x00))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :hl #x0000)))
+     (green.cpu::run (green.cpu::make-ldhld8 :d #x12) mem set)
+     (,test (= (nth 0 mem) #x12))
+     (,test (= (green.cpu::pc-get set) 2))))
+
 (defmacro ldabc (&key test)
   `(let ((mem (list #x12))
          (set (green.cpu::make-register-set
@@ -73,6 +82,35 @@
      (,test (= (green.cpu::a-get set) #x12))
      (,test (= (green.cpu::pc-get set) 3))))
 
+(defmacro ldbca (&key test)
+  `(let ((mem (list #x00))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :bc #x0000
+               :af #x1200)))
+     (green.cpu::run (green.cpu::make-ldbca) mem set)
+     (,test (= (nth 0 mem) #x12))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro lddea (&key test)
+  `(let ((mem (list #x00))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :de #x0000
+               :af #x1200)))
+     (green.cpu::run (green.cpu::make-lddea) mem set)
+     (,test (= (nth 0 mem) #x12))
+     (,test (= (green.cpu::pc-get set) 1))))
+
+(defmacro ldd16a (&key test)
+  `(let ((mem (list #x00))
+         (set (green.cpu::make-register-set
+               :pc 0
+               :af #x1200)))
+     (green.cpu::run (green.cpu::make-ldd16a :d #x0000) mem set)
+     (,test (= (nth 0 mem) #x12))
+     (,test (= (green.cpu::pc-get set) 3))))
+
 ;;;
 
 (fiveam:def-suite* :green.t)
@@ -94,6 +132,10 @@
  ldr8d8
  ldr8hl
  ldhlr8
+ ldhld8
  ldabc
  ldade
- ldad16)
+ ldad16
+ ldbca
+ lddea
+ ldd16a)
