@@ -2,6 +2,7 @@
   :serial t
   :pathname "t/"
   :components
-  ((:file "fiveam"))
+  ((:file "fiveam")
+   (:file "cpu"))
   :depends-on (:fiveam
                :green))
