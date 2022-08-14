@@ -3,6 +3,7 @@
   :pathname "t/"
   :components
   ((:file "fiveam")
-   (:file "cpu"))
+   (:file "cpu")
+   (:file "rendering"))
   :depends-on (:fiveam
                :green))

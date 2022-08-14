@@ -2,4 +2,5 @@
   :serial t
   :pathname "src/"
   :components
-  ((:file "cpu")))
+  ((:file "cpu")
+   (:file "rendering")))

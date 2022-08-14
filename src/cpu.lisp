@@ -11,7 +11,7 @@
   (logand int16 #xFF))
 
 (defun make-int16 (hi lo)
-  (+ (ash hi 8) lo))
+  (logior (ash hi 8) lo))
 
 ;;;
 
