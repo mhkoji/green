@@ -1,6 +1,6 @@
-(defpackage :green.t.cpu
+(defpackage :green.t.cpu.run
   (:use :cl))
-(in-package :green.t.cpu)
+(in-package :green.t.cpu.run)
 
 (defmethod green.cpu::mem8-get ((mem list) (addr integer))
   (nth addr mem))
@@ -203,7 +203,7 @@
      (,test (= (green.cpu::pc-get set) 1))))
 
 
-(green.t:add-tests :cpu
+(green.t:add-tests :cpu.run
  ldr8r8
  ldr8d8
  ldr8hl
