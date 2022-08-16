@@ -184,6 +184,61 @@
 (defstruct ldiahl)
 (defstruct lddhla)
 (defstruct lddahl)
+(defstruct incr16 r)
+
+(defun num->reg8 (num)
+  (case num
+    (0 +b+)
+    (1 +c+)
+    (2 +d+)
+    (3 +e+)
+    (4 +h+)
+    (5 +l+)
+    (7 +a+)))
+
+(defun num->reg16 (num)
+  (case num
+    (0 +bc+)
+    (1 +de+)
+    (2 +hl+)
+    (3 +sp+)))
+
+(defun parse (memory addr)
+  (let ((opcode (mem8-get memory addr)))
+    (block nil
+      (when (= (logand opcode #b11000000) #b01000000)
+        (let ((x-reg (num->reg8 (ash (logand opcode #b00111000) -3)))
+              (y-num (logand opcode #b00000111)))
+          (when (and x-reg (= y-num #b110))
+            (return (make-ldr8hl :r x-reg)))
+          (let ((y-reg (num->reg8 (logand opcode #b00000111))))
+            (when (and x-reg y-reg)
+              (return (make-ldr8r8 :x x-reg :y y-reg))))))
+      (when (= (logand opcode #b11000111) #b00000110)
+        (let ((r (num->reg8 (ash (logand opcode #b00111000) -3))))
+          (when r
+            (return (make-ldr8d8 :r r :d (mem8-get memory (1+ addr)))))))
+      (when (= (logand opcode #b11111000) #b01110000)
+        (let ((r (num->reg8 (logand opcode #b00000111))))
+          (when r
+            (return (make-ldhlr8 :r r)))))
+      (when (= opcode #b00110110)
+        (return (make-ldhld8 :d (mem8-get memory (1+ addr)))))
+      (when (= opcode #b00001010)
+        (return (make-ldabc)))
+      (when (= opcode #b00011010)
+        (return (make-ldade)))
+      (when (= opcode #b11111010)
+        (let ((lo (mem8-get memory (+ addr 1)))
+              (hi (mem8-get memory (+ addr 2))))
+          (return (make-ldad16 :d (make-int16 hi lo)))))
+      (when (= (logand opcode #b11001111) #b00000011)
+        (let ((r (num->reg16 (ash (logand opcode #b00110000) -4))))
+          (when r
+            (return (make-incr16 :r r)))))
+      (error "Invalid opcode: ~A" opcode))))
+
+;;;
 
 (defmethod run ((cmd ldr8r8) memory register-set)
   (with-slots (x y) cmd

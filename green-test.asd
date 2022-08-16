@@ -4,6 +4,7 @@
   :components
   ((:file "fiveam")
    (:file "cpu/run")
+   (:file "cpu/parse")
    (:file "rendering"))
   :depends-on (:fiveam
                :green))
