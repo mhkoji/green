@@ -15,6 +15,27 @@
         ((= p 3)
          (sdl:color :r #x00 :g #x00 :b #x00))))
 
+;;;
+
+(defstruct display w h surface)
+
+(defmethod green.rendering::sync-tile ((display display) tile x y)
+  (with-accessors ((w display-w)
+                   (h display-h)
+                   (surface display-surface)) display
+    (green.rendering::do-tile-pixels ((pixel i j) tile)
+      (let ((pos-x (+ (* x green.rendering::*tile-pixel-count*) i))
+            (pos-y (+ (* y green.rendering::*tile-pixel-count*) j))
+            (color (pixel->color pixel)))
+        (sdl:draw-box-* (* pos-x w) (* pos-y h) w h
+                        :color color :surface surface)))))
+
+;;;
+
+(defmethod green.rendering::mem8-get ((memory list) (addr integer))
+  (nth addr memory))
+
+
 (defun main ()
   (sdl:with-init ()
     (sdl:window 640 480)
@@ -23,20 +44,11 @@
       (:quit-event () t)
       (:idle ()
         (sdl:clear-display (sdl:color :r #x22 :g #x22 :b #x44))
-        (let ((w 20) (h 20))
-          (let* ((tile (green.rendering::make-tile
-                        :bytes
-                        '(#xFF #x00 #x7E #xFF
-                          #x85 #x81 #x89 #x83
-                          #x93 #x85 #xA5 #x8B
-                          #xC9 #x97 #x7E #xFF)))
-                 (pixels (green.rendering::tile->pixels tile)))
-            (dotimes (i 8)
-              (dotimes (j 8)
-                (let ((x (+ (* j h) 100))
-                      (y (+ (* i w) 100))
-                      (color (pixel->color (aref pixels i j))))
-                  (sdl:draw-box-* x y w h
-                                  :color color
-                                  :surface sdl:*default-display*))))))
+        (let ((display (make-display
+                        :w 20 :h 20 :surface sdl:*default-display*))
+              (memory '(#xFF #x00 #x7E #xFF
+                        #x85 #x81 #x89 #x83
+                        #x93 #x85 #xA5 #x8B
+                        #xC9 #x97 #x7E #xFF)))
+          (green.rendering::sync display memory))
         (sdl:update-display)))))
