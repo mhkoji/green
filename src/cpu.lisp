@@ -111,7 +111,7 @@
 
 ;;;
 
-(defgeneric run (cmd memory register-set))
+(defgeneric run (op memory register-set))
 
 (defvar +af+ :af)
 (defvar +bc+ :bc)
@@ -240,129 +240,133 @@
 
 ;;;
 
-(defmethod run ((cmd ldr8r8) memory register-set)
-  (with-slots (x y) cmd
+(defmethod run ((op ldr8r8) memory register-set)
+  (with-slots (x y) op
     (reg8-set register-set x (reg8-get register-set y)))
   (pc-inc register-set))
 
-(defmethod run ((cmd ldr8d8) memory register-set)
-  (with-slots (r d) cmd
+(defmethod run ((op ldr8d8) memory register-set)
+  (with-slots (r d) op
     (reg8-set register-set r d))
   (pc-inc register-set 2))
 
-(defmethod run ((cmd ldr8hl) memory register-set)
-  (with-slots (r) cmd
+(defmethod run ((op ldr8hl) memory register-set)
+  (with-slots (r) op
     (let ((addr (hl-get register-set)))
       (let ((int8 (mem8-get memory addr)))
         (reg8-set register-set r int8))))
   (pc-inc register-set))
 
-(defmethod run ((cmd ldhlr8) memory register-set)
-  (with-slots (r) cmd
+(defmethod run ((op ldhlr8) memory register-set)
+  (with-slots (r) op
     (let ((addr (hl-get register-set))
           (int8 (reg8-get register-set r)))
       (mem8-set memory addr int8)))
   (pc-inc register-set))
 
-(defmethod run ((cmd ldhld8) memory register-set)
-  (with-slots (d) cmd
+(defmethod run ((op ldhld8) memory register-set)
+  (with-slots (d) op
     (let ((addr (hl-get register-set)))
       (mem8-set memory addr d)))
   (pc-inc register-set 2))
 
-(defmethod run ((cmd ldabc) memory register-set)
+(defmethod run ((op ldabc) memory register-set)
   (let ((addr (bc-get register-set)))
     (let ((int8 (mem8-get memory addr)))
       (a-set register-set int8)))
   (pc-inc register-set))
 
-(defmethod run ((cmd ldade) memory register-set)
+(defmethod run ((op ldade) memory register-set)
   (let ((addr (de-get register-set)))
     (let ((int8 (mem8-get memory addr)))
       (a-set register-set int8)))
   (pc-inc register-set))
 
-(defmethod run ((cmd ldad16) memory register-set)
-  (with-slots (d) cmd
+(defmethod run ((op ldad16) memory register-set)
+  (with-slots (d) op
     (a-set register-set (mem8-get memory d)))
   (pc-inc register-set 3))
 
-(defmethod run ((cmd ldbca) memory register-set)
+(defmethod run ((op ldbca) memory register-set)
   (let ((addr (bc-get register-set))
         (int8 (a-get register-set)))
     (mem8-set memory addr int8))
   (pc-inc register-set))
 
-(defmethod run ((cmd lddea) memory register-set)
+(defmethod run ((op lddea) memory register-set)
   (let ((addr (de-get register-set))
         (int8 (a-get register-set)))
     (mem8-set memory addr int8))
   (pc-inc register-set))
 
-(defmethod run ((cmd ldd16a) memory register-set)
-  (with-slots (d) cmd
+(defmethod run ((op ldd16a) memory register-set)
+  (with-slots (d) op
     (mem8-set memory d (a-get register-set)))
   (pc-inc register-set 3))
 
-(defmethod run ((cmd ldaff00+d8) memory register-set)
-  (with-slots (d) cmd
+(defmethod run ((op ldaff00+d8) memory register-set)
+  (with-slots (d) op
     (let ((addr (make-int16 #xFF d)))
       (let ((int8 (mem8-get memory addr)))
         (a-set register-set int8))))
   (pc-inc register-set 2))
 
-(defmethod run ((cmd ldff00+d8a) memory register-set)
-  (with-slots (d) cmd
+(defmethod run ((op ldff00+d8a) memory register-set)
+  (with-slots (d) op
     (let ((addr (make-int16 #xFF d))
           (int8 (a-get register-set)))
       (mem8-set memory addr int8)))
   (pc-inc register-set 2))
 
-(defmethod run ((cmd ldaff00+c) memory register-set)
+(defmethod run ((op ldaff00+c) memory register-set)
   (let ((addr (make-int16 #xFF (c-get register-set))))
     (let ((int8 (mem8-get memory addr)))
       (a-set register-set int8)))
   (pc-inc register-set))
 
-(defmethod run ((cmd ldff00+ca) memory register-set)
+(defmethod run ((op ldff00+ca) memory register-set)
   (let ((addr (make-int16 #xFF (c-get register-set)))
         (int8 (a-get register-set)))
     (mem8-set memory addr int8))
   (pc-inc register-set))
 
-(labels ((inc (int16)
-           (if (= int16 #xFFFF) #x0000 (1+ int16)))
-         (dec (int16)
-           (if (= int16 #x0000) #xFFFF (1- int16)))
-         (hl-update (register-set fn)
+(labels ((hl-update (register-set fn)
            (let ((int16 (funcall fn (hl-get register-set))))
-             (hl-set register-set int16))))
-  (defmethod run ((cmd ldihla) memory register-set)
+             (hl-set register-set int16)))
+         (hl-inc (register-set)
+           (hl-update register-set
+            (lambda (int16)
+              (if (= int16 #xFFFF) #x0000 (1+ int16)))))
+         (hl-dec (register-set)
+           (hl-update register-set
+            (lambda (int16)
+              (if (= int16 #x0000) #xFFFF (1- int16))))))
+  (defmethod run ((op ldihla) memory register-set)
     (let ((addr (hl-get register-set))
           (int8 (a-get register-set)))
       (mem8-set memory addr int8))
-    (hl-update register-set #'inc)
+    (hl-inc register-set)
     (pc-inc register-set))
 
-  (defmethod run ((cmd ldiahl) memory register-set)
+  (defmethod run ((op ldiahl) memory register-set)
     (let ((addr (hl-get register-set)))
       (let ((int8 (mem8-get memory addr)))
         (a-set register-set int8)))
-    (hl-update register-set #'inc)
+    (hl-inc register-set)
     (pc-inc register-set))
 
-  (defmethod run ((cmd lddhla) memory register-set)
+  (defmethod run ((op lddhla) memory register-set)
     (let ((addr (hl-get register-set))
           (int8 (a-get register-set)))
       (mem8-set memory addr int8))
-    (hl-update register-set #'dec)
+    (hl-dec register-set)
     (pc-inc register-set))
 
-  (defmethod run ((cmd lddahl) memory register-set)
+  (defmethod run ((op lddahl) memory register-set)
     (let ((addr (hl-get register-set)))
       (let ((int8 (mem8-get memory addr)))
         (a-set register-set int8)))
-    (hl-update register-set #'dec)
+    (hl-dec register-set)
     (pc-inc register-set)))
 
 ;;;
